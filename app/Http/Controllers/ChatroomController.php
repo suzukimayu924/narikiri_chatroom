@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Chatroom;
+use Illuminate\Support\Facades\DB;
 
 class ChatroomController extends Controller
 {
@@ -40,7 +41,12 @@ public function like($id)
     $message = Chatroom::findOrFail($id);
     $message->increment('likes');
     return redirect()->back();
+
 }
 
-
+public function chatroom()
+{
+    $items = \DB::table('chatroom')->get();  
+    return view('chatroom', ['items' => $items]);  // 全てのデータが取得できる
+}
 }

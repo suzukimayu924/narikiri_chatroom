@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\Character;
 use Illuminate\Http\Request;
 
 class CharacterController extends Controller
@@ -13,8 +12,7 @@ class CharacterController extends Controller
      */
     public function index()
     {
-        $characters = Character::all();
-        return view('character_index', compact('characters'));
+        return view('character_index');
 
     }
     
@@ -100,4 +98,5 @@ class CharacterController extends Controller
         return redirect()->route('characters.index')->with('success', 'キャラクターが削除されました。');
     }
 }
+
 

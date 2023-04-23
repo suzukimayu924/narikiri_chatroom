@@ -7,6 +7,7 @@ use App\Models\Chatroom;
 use App\Http\Controllers\CharacterController;
 
 
+
 Route::get('/', function () {
     return view('index');
 })->name('index');
@@ -40,3 +41,6 @@ Route::get('/characters/create', [CharacterController::class, 'create'])->name('
 
 Route::get('/character', [CharacterController::class, 'index'])->name('character.index');
 
+
+
+Route::get('/chatroom', [ChatroomController::class, 'chatroom'])->name('chatroom');

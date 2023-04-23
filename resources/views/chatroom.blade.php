@@ -53,8 +53,14 @@
 <section class="chat-room">
     <div class="messages" id="messages">
         <!-- メッセージはここに追加されます -->
+        <img src="https://i.postimg.cc/WDnsrfnY/image.png" alt="お嬢さま" style="width: 50px; margin-right: 10px;">
+        @foreach ($items as $item) 
+
+        {{$item->character_name}}
+        {{$item->message}}
+        @endforeach  
     </div>
-    <form id="message-form" class="message-form" action="{{ route('chatroom.store') }}" method="post">
+    <form id="message-form" class="message-form" action="{{ route('chatroom') }}" method="post">
         @csrf
         <input type="text" id="message-input" class="message-input" name="message" placeholder="メッセージを入力してください" required>
         <button type="submit" class="send-message">送信</button> 
@@ -113,49 +119,36 @@
 
  
 <script>
-  
-    // Firebaseの設定と初期化
-    var firebaseConfig = {
-      // ここにFirebaseの設定情報を記入
-    };
-    firebase.initializeApp(firebaseConfig);
+// Firebaseの設定と初期化
+var firebaseConfig = {
+  // ここにFirebaseの設定情報を記入
+};
+firebase.initializeApp(firebaseConfig);
 
-    const db = firebase.database();
-    const auth = firebase.auth();
-    const messagesRef = db.ref("messages");
+// Firebaseの参照を定義
+const db = firebase.database();
+const auth = firebase.auth();
+const messagesRef = db.ref("messages");
 
-    // DOM要素
-    const messageForm = document.getElementById("message-form");
-    const messageInput = document.getElementById("message-input");
-    const messages = document.getElementById("messages");
-    const messageTemplate = document.getElementById("message-template").content;
+// DOM要素を取得
+const messageForm = document.getElementById("message-form");
+const messageInput = document.getElementById("message-input");
+const messages = document.getElementById("messages");
+const messageTemplate = document.getElementById("message-template").content;
 
-      // 削除ボタンを表示
-  deleteButton.hidden = false;
-  deleteButton.addEventListener("click", () => {
-    messagesRef.child(snapshot.key).remove();
-  });
+// 現在のユーザー情報
+let currentUser = null;
+const adminEmail = "admin@example.com";
 
-    // メッセージを送信
-    messageForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      if (messageInput.value.trim() === "") return;
+// メッセージを削除する関数
+const deleteMessage = (snapshot) => {
+  messagesRef.child(snapshot.key).remove();
+};
 
-      const newMessageRef = messagesRef.push();
-      newMessageRef.set({
-        character: currentUser,
-        text: messageInput.value.trim(),
-        timestamp: firebase.database.ServerValue.TIMESTAMP,
-      });
-
-      // メッセージをクリア
-      messageInput.value = "";
-    });
-
-    // メッセージを表示
-    messagesRef.on("child_added", (snapshot) => {
-      const data = snapshot.val();
-      const messageElement = messageTemplate.cloneNode(true);
+// メッセージを表示する関数
+const showMessage = (snapshot) => {
+  const data = snapshot.val();
+  const messageElement = messageTemplate.cloneNode(true);
   messageElement.dataset.key = snapshot.key;
   const messageIcon = messageElement.querySelector(".message-icon");
   const messageAuthor = messageElement.querySelector(".message-author");
@@ -173,47 +166,64 @@
   if (currentUser.email === adminEmail) {
     deleteButton.hidden = false;
     deleteButton.addEventListener("click", () => {
-      messagesRef.child(snapshot.key).remove();
+      deleteMessage(snapshot);
     });
   }
 
   messages.appendChild(messageElement);
   messages.scrollTop = messages.scrollHeight;
-});
+};
 
-// メッセージを削除
-messagesRef.on("child_removed", (snapshot) => {
+// メッセージを削除した時に表示を更新する関数
+const removeMessage = (snapshot) => {
   const messageElements = messages.querySelectorAll(".message");
   messageElements.forEach((messageElement) => {
     if (messageElement.dataset.key === snapshot.key) {
       messageElement.remove();
     }
   });
-});
+};
 
-// ユーザー認証
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    currentUser = user;
-  } else {
-    auth.signInAnonymously();
+// メッセージを送信する関数
+const sendMessage = () => {
+  // メッセージを送信する処理
+  const newMessageRef = messagesRef.push();
+  newMessageRef.set({
+    character: currentUser,
+    text: messageInput.value.trim(),
+    timestamp: firebase.database.ServerValue.TIMESTAMP,
+  });
+
+  // 送信されたメッセージをローカルストレージに保存する
+  const messages = JSON.parse(localStorage.getItem("messages") || "[]");
+  messages.push({
+    character: currentUser,
+    text: messageInput.value.trim(),
+    timestamp: new Date().getTime(),
+  });
+  localStorage.setItem("messages", JSON.stringify(messages));
+
+  // メッセージをクリアする
+  messageInput.value = "";
+};
+
+// ローカルストレージからメッセージを読み込む関数
+const loadMessages = () => {
+  const messages = JSON.parse(localStorage.getItem("messages") || "[]");
+  messages.forEach(message) => {
+    const messageElement = messageTemplate.cloneNode(true);
+    const messageIcon = messageElement.querySelector(".message-icon");
+    const messageAuthor = messageElement.querySelector(".message-author");
+    const messageTime = messageElement.querySelector(".message-time");
+    const messageText = messageElement.querySelector('.message-text');
+
+messageIcon.src = data.character.image;
+messageIcon.alt = data.character.name;
+messageAuthor.textContent = data.character.name;
+messageTime.textContent = new Date(data.timestamp).toLocaleString();
+messageText.textContent = data.text;
   }
-});
-
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    currentUser = user;
-    // 管理者としてログインしているかどうかを確認
-    if (currentUser.email === adminEmail) {
-      console.log("Logged in as admin");
-    } else {
-      console.log("Not logged in as admin");
-    }
-  } else {
-    auth.signInAnonymously();
-  }
-});
-
+};
 </script>
 <p>
 <a href="{{ route('character.index') }}">管理人用ページ</a></p>
